@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: server-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: openkey
+          POSTGRES_PASSWORD: openkey
+          POSTGRES_DB: openkey
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openkey -d openkey"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://openkey:openkey@localhost:5432/openkey_test
+      JWT_SECRET: ci-jwt-secret-key-at-least-32-chars-long!
+      AUTH_RATE_LIMIT_REQUESTS: "1000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Run tests
+        run: pytest -q
