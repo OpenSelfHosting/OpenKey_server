@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS / Windows junk
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
