@@ -253,4 +253,3 @@ Unit tests cover settings, JWT helpers, rate limiting, and sync cursors. API tes
 ## License
 
 MIT — see [LICENSE](LICENSE).
-# openkey_extension
