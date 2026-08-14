@@ -24,7 +24,8 @@ docker compose up --build -d
 ```
 
 API: http://localhost:8000  
-Docs: http://localhost:8000/docs  
+Docs: http://localhost:8000/docs (overview) · http://localhost:8000/docs/reference (interactive)  
+OpenAPI: http://localhost:8000/openapi.json  
 Health: http://localhost:8000/health
 
 Schema is applied via **Alembic** on API startup (`alembic upgrade head`). Existing databases that were bootstrapped with the old `create_all` path are stamped once automatically.
