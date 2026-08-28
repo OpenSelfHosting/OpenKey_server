@@ -1,16 +1,17 @@
 from pydantic import BaseModel, Field
 
 from app.schemas.attachment import AttachmentResponse, MAX_ATTACHMENT_BYTES
-from app.schemas.collection import CollectionResponse
+from app.schemas.collection import CollectionResponse, FolderId
 from app.schemas.entry import EntryResponse
+from app.schemas.vault_ids import MAX_COLLECTION_ICON_CHARS
 
 
 class SyncCollectionItem(BaseModel):
     uuid: str = Field(min_length=1, max_length=64)
     encrypted_name: str = Field(min_length=1)
-    icon: str = "material:folder"
+    icon: str = Field(default="material:folder", max_length=MAX_COLLECTION_ICON_CHARS)
     color: int | None = None
-    parent_uuid: str | None = Field(default=None, max_length=64)
+    parent_uuid: FolderId = None
     sort_order: int = 0
     revision: int = Field(default=1, ge=1)
     is_deleted: bool = False
@@ -18,7 +19,7 @@ class SyncCollectionItem(BaseModel):
 
 class SyncEntryItem(BaseModel):
     uuid: str = Field(min_length=1, max_length=64)
-    collection_uuid: str | None = None
+    collection_uuid: FolderId = None
     encrypted_payload: str = Field(min_length=1)
     revision: int = Field(default=1, ge=1)
     is_deleted: bool = False

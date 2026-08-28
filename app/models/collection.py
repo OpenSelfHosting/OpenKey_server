@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
@@ -37,12 +38,14 @@ class Collection(Base):
     )
     uuid: Mapped[str] = mapped_column(String(64), nullable=False)
     encrypted_name: Mapped[str] = mapped_column(String, nullable=False)
+    # TEXT: custom folder icons are `custom:png:<base64>` (up to ~400 KB).
     icon: Mapped[str] = mapped_column(
-        String(255),
+        String,
         nullable=False,
         default="material:folder",
     )
-    color: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # BIGINT: Flutter ARGB32 values exceed signed 32-bit INTEGER.
+    color: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     # Nested folders — null means top-level (matches openkey_app CollectionTable).
     parent_uuid: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

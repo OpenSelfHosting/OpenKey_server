@@ -2,7 +2,11 @@
 
 Zero-knowledge sync API for the [OpenKey](https://github.com/OpenSelfHosting) password manager.
 
+Version **1.0.6** — aligned with the OpenKey app, browser extension, and CLI.
+
 The server stores **ciphertext only**. It never receives master passwords and never decrypts vault data. Authentication uses a client-derived `auth_hash` compared in constant time; vault contents, attachment blobs, org names, and share payloads stay encrypted end-to-end on the client.
+
+**Nearby LAN sync** between devices is peer-to-peer (UDP/TCP on the LAN). It does **not** go through this API.
 
 ## Stack
 
@@ -50,6 +54,7 @@ alembic upgrade head
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Access JWT TTL |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Opaque refresh token TTL (rotated on use) |
 | `CORS_ORIGINS` | localhost:3000/8080 | Comma-separated origins — **no `*`** |
+| `CORS_ALLOW_BROWSER_EXTENSIONS` | `true` | Allow `chrome-extension://` / `moz-extension://` origins for the standalone MV3 extension (Chrome, Firefox, Edge, Brave, Vivaldi, LibreWolf) |
 | `AUTH_RATE_LIMIT_REQUESTS` | `10` | Max auth requests per IP per window |
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `60` | Auth rate-limit window |
 | `TRUST_PROXY_HEADERS` | `false` | Use `X-Forwarded-For` for rate-limit IP (enable only behind a stripping reverse proxy) |
@@ -106,7 +111,17 @@ Identity keys are opaque blobs stored for sharing/orgs; the server never decrypt
 | `PATCH` | `/collections/{uuid}` | Update ciphertext fields + `parent_uuid` + revision |
 | `DELETE` | `/collections/{uuid}` | Soft delete |
 
-Nested folders use `parent_uuid` (null = top-level), matching the OpenKey app.
+Nested folders use `parent_uuid` (null = top-level), matching the OpenKey app. The client sentinels `__root__` and the string `null` are stored as SQL NULL.
+
+Reserved personal-vault namespaces (opaque collection rows, encrypted names) used by the app, extension, and CLI:
+
+| `uuid` | Contents |
+|--------|----------|
+| `__wallets__` | Payment cards (`type: card` inside `encrypted_payload`) |
+| `__crypto_wallets__` | Crypto wallets (`type: crypto`) |
+| `__dev_secrets__` | Developer secrets (`type: secret`) |
+
+Folder `icon` is an opaque client string: `material:…`, `brands/….svg`, or Pro custom `custom:png:<base64>` (up to ~400 KB). `color` is an optional Flutter ARGB32 integer.
 
 ### Entries (Bearer JWT)
 
@@ -206,7 +221,9 @@ POST /sync
 }
 ```
 
-Pushes local changes (last-write-wins by per-item `revision`) and returns collections/entries/attachments with `updated_at` newer than `since_revision`. The sync cursor (`since_revision` / `server_revision`) is unix microseconds of `updated_at` — pass `0` for a full pull. Nested folder hierarchy is preserved via collection `parent_uuid`. Org memberships and shares use their dedicated endpoints (not included in sync).
+Pushes local changes (last-write-wins by per-item `revision`) and returns collections/entries/attachments with `updated_at` newer than `since_revision`. The sync cursor (`since_revision` / `server_revision`) is unix microseconds of `updated_at` — pass `0` for a full pull. Nested folder hierarchy is preserved via collection `parent_uuid`. Cards, crypto wallets, and developer secrets are ordinary entries under the reserved collection uuids above. Org memberships and shares use their dedicated endpoints (not included in sync).
+
+The CLI (`openkey sync`) and the browser extension standalone vault use this same `POST /sync` contract. Native-bridge mode (desktop app or Android Termux via `OPENKEY_NATIVE_PORT` / `OPENKEY_NATIVE_TOKEN`) does not call the API.
 
 ### Health
 
@@ -237,7 +254,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Unit tests cover settings, JWT helpers, rate limiting, and sync cursors. API tests exercise auth, collections/entries, and sync against PostgreSQL.
+Unit tests cover settings, JWT helpers, rate limiting, folder-id sentinels, and sync cursors. API tests exercise auth, collections/entries, reserved card/crypto/secret namespaces, custom folder icons, browser-extension CORS, and sync against PostgreSQL.
 
 ## Security model
 
@@ -248,8 +265,10 @@ Unit tests cover settings, JWT helpers, rate limiting, and sync cursors. API tes
 5. Soft deletes bump `revision` so peers learn about tombstones via sync.
 6. The server **never decrypts** any vault, attachment, org, or share ciphertext.
 7. Access JWTs are short-lived; refresh tokens are hashed at rest and rotated on use. Reuse of a rotated refresh token revokes all sessions for that user.
-8. Auth endpoints are rate-limited; CORS is an explicit allow-list. `X-Forwarded-For` is ignored unless `TRUST_PROXY_HEADERS` is enabled.
+8. Auth endpoints are rate-limited; CORS is an explicit allow-list plus optional browser-extension origin regex (`CORS_ALLOW_BROWSER_EXTENSIONS`). `X-Forwarded-For` is ignored unless `TRUST_PROXY_HEADERS` is enabled.
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Report vulnerabilities privately — **security@openselfhosting.com**. See [SECURITY.md](SECURITY.md).

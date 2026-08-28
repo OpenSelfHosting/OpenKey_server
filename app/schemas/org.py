@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.schemas.collection import FolderId
+
 
 class OrgCreate(BaseModel):
     uuid: str = Field(min_length=1, max_length=64)
@@ -111,13 +113,13 @@ class OrgCollectionResponse(BaseModel):
 
 class OrgEntryCreate(BaseModel):
     uuid: str = Field(min_length=1, max_length=64)
-    collection_uuid: str | None = Field(default=None, max_length=64)
+    collection_uuid: FolderId = None
     encrypted_payload: str = Field(min_length=1)
     revision: int = Field(default=1, ge=1)
 
 
 class OrgEntryUpdate(BaseModel):
-    collection_uuid: str | None = None
+    collection_uuid: FolderId = None
     encrypted_payload: str | None = Field(default=None, min_length=1)
     revision: int | None = Field(default=None, ge=1)
     is_deleted: bool | None = None

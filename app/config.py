@@ -33,6 +33,9 @@ class Settings(BaseSettings):
         "http://localhost:3000,http://127.0.0.1:3000,"
         "http://localhost:8080,http://127.0.0.1:8080"
     )
+    # Allow MV3 extension origins (chrome-extension:// / moz-extension://)
+    # so the standalone browser vault can call the API without listing IDs.
+    cors_allow_browser_extensions: bool = True
     # Sliding-window limits for unauthenticated auth endpoints (per client IP).
     auth_rate_limit_requests: int = 10
     auth_rate_limit_window_seconds: int = 60
@@ -66,6 +69,18 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cors_origin_regex(self) -> str | None:
+        """Chrome (a-p 32-char id) and Firefox (UUID) extension pages."""
+        if not self.cors_allow_browser_extensions:
+            return None
+        return (
+            r"^chrome-extension://[a-p]{32}$"
+            r"|^moz-extension://[0-9a-fA-F]{8}-"
+            r"[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+            r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        )
 
 
 @lru_cache

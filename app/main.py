@@ -27,15 +27,18 @@ app = FastAPI(
     title="OpenKey Sync Server",
     description=(
         "Zero-knowledge password manager sync API. "
-        "The server stores ciphertext only and never decrypts vault data."
+        "The server stores ciphertext only and never decrypts vault data. "
+        "Aligned with OpenKey app / extension / CLI 1.0.6 "
+        "(reserved collections, custom folder icons, browser-extension CORS)."
     ),
-    version="0.5.1",
+    version="1.0.6",
     lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
