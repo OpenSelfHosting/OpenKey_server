@@ -28,7 +28,10 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+config.set_main_option(
+    "sqlalchemy.url",
+    get_settings().database_url.replace("%", "%%")
+)
 
 
 def run_migrations_offline() -> None:

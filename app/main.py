@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, Response, status
@@ -9,6 +10,8 @@ from app.api import attachments, auth, collections, entries, orgs, shares, sync
 from app.config import get_settings
 from app.db.migrate import run_migrations
 from app.db.session import engine
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -71,7 +74,6 @@ app.include_router(orgs.router)
 app.include_router(shares.router)
 app.include_router(sync.router)
 
-
 @app.get("/health", tags=["health"])
 async def health() -> dict[str, str]:
     """Liveness + DB readiness. Returns 503 when Postgres is unreachable."""
@@ -79,8 +81,10 @@ async def health() -> dict[str, str]:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
     except Exception as exc:
+        logger.exception("Database health check failed")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database unavailable",
         ) from exc
+
     return {"status": "ok", "database": "ok"}
