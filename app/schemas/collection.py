@@ -1,14 +1,18 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, PlainValidator
+from pydantic import (
+    BeforeValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 from app.schemas.vault_ids import MAX_COLLECTION_ICON_CHARS, normalize_folder_id
 
 FolderId = Annotated[
-    str | None,
-    PlainValidator(normalize_folder_id),
-    Field(max_length=64),
+    Annotated[str, Field(max_length=64)] | None,
+    BeforeValidator(normalize_folder_id),
 ]
 
 
